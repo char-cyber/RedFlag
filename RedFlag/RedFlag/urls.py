@@ -22,7 +22,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('RedFlagApp/', include('RedFlagApp.urls')),
+    path('uploads/', include('uploads.urls')),
+    path('classification/', include('classification.urls')),
 ]
 
 
