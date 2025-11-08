@@ -1,6 +1,5 @@
 from django.http import JsonResponse
 
-# Example view for /classification/classify/
 def classify_view(request):
     """
     Placeholder view for document classification.

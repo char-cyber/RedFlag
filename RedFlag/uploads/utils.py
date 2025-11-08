@@ -43,3 +43,24 @@ def count_images(buffer):
     except Exception as e:
         print(f"[WARN] count_images failed: {e}")
     return total_images
+
+import fitz  # PyMuPDF
+
+def extract_text_from_file(uploaded_file):
+    """
+    Extract text from a PDF file uploaded via Django.
+    Returns either a single string or a dict with pages.
+    """
+    document_text = ""
+    pages_text = {}
+    
+    # Open PDF in memory
+    pdf = fitz.open(stream=uploaded_file.read(), filetype="pdf")
+    
+    for page_number in range(len(pdf)):
+        page = pdf[page_number]
+        text = page.get_text()
+        pages_text[page_number + 1] = text
+        document_text += text + "\n"
+    
+    return document_text, pages_text
