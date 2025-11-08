@@ -5,7 +5,7 @@ from .models import FileModel # Assuming you have a model to store file info
 from .utils import *
 
 #classifcation
-from classification.services.pii_detection import detect_pii
+from classification.services.pii_detection import detect_pii_pdf
 
 
 def home(request):
@@ -25,7 +25,10 @@ def upload_file(request):
                     title=form.cleaned_data['title'], 
                     file=uploaded_file
                 )
-                #extract text for classification
+
+
+                #extract text and find PII flags                
+
                 uploaded_file.seek(0) #starting at the start again
                 text_content = ""
                 try:
@@ -33,6 +36,7 @@ def upload_file(request):
                     pdf_reader = PdfReader(uploaded_file)
                     for page in pdf_reader.pages:
                         text_content += page.extract_text() or ""
+                        
                     text_content = text_content.strip()
 
                 except Exception as e:
@@ -40,8 +44,12 @@ def upload_file(request):
                         'form': form, 
                         'errors': e
                     })
+
+
+                pii_flags = detect_pii_pdf(uploaded_file)
+
                 
-                pii_flags = detect_pii(text_content)
+                
 
                 return render(request, 'success.html', {
                     'num_pages': preprocessed_file["num_pages"], 
