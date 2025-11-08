@@ -1,5 +1,8 @@
 from pypdf import PdfReader
 from django.http import HttpResponse
+import fitz
+from io import BytesIO
+
 
 def preprocess(file_obj):
     result = {
@@ -9,13 +12,34 @@ def preprocess(file_obj):
     }
     #is pdf?
     try: 
-        reader = PdfReader(file_obj)
+        # Read the file into memory buffer (works for Django InMemoryUploadedFile)
+        file_data = file_obj.read()
+        buffer = BytesIO(file_data)
+
+        # Validate + count pages
+        reader = PdfReader(buffer)
+
         #count pages
         result["num_pages"] = len(reader.pages)
 
+        buffer.seek(0)
+        result["num_images"] = count_images(buffer) 
         result["is_pdf"] = True
+
     except Exception as e:
         result["is_pdf"] = False
         result["errors"].append(f"Invalid PDF: {str(e)}")
 
     return result
+
+
+def count_images(buffer):
+    """Count images in PDF from memory buffer."""
+    total_images = 0
+    try:
+        pdf_doc = fitz.open(stream=buffer.read(), filetype="pdf")
+        for page in pdf_doc:
+            total_images += len(page.get_images())
+    except Exception as e:
+        print(f"[WARN] count_images failed: {e}")
+    return total_images

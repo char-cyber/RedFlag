@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PII Detection Report</title>
+</head>
+<body>
+    <h1>PII Detection Report</h1>
+    <p><strong>File:</strong> {{ filename }}</p>
+    <p><strong>Category:</strong> {{ category }}</p>
+
+    {% if findings %}
+        <h3>Detected PII:</h3>
+        <ul>
+            {% for key, values in findings.items %}
+                <li><b>{{ key }}</b>: {{ values|join:", " }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No PII detected ✅</p>
+    {% endif %}
+
+    <a href="{% url 'upload_file' %}">Upload another file</a>
+</body>
+</html>
