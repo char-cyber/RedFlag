@@ -27,8 +27,20 @@ def upload_file(request):
                 )
                 #extract text for classification
                 uploaded_file.seek(0) #starting at the start again
-                text_content = extract_text_from_file(uploaded_file)
+                text_content = ""
+                try:
+                    # uploaded_file is a Django InMemoryUploadedFile or TemporaryUploadedFile
+                    pdf_reader = PdfReader(uploaded_file)
+                    for page in pdf_reader.pages:
+                        text_content += page.extract_text() or ""
+                    text_content = text_content.strip()
 
+                except Exception as e:
+                    return render(request, 'upload.html', {
+                        'form': form, 
+                        'errors': e
+                    })
+                
                 pii_flags = detect_pii(text_content)
 
                 return render(request, 'success.html', {

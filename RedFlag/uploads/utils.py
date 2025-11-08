@@ -46,21 +46,43 @@ def count_images(buffer):
 
 import fitz  # PyMuPDF
 
-def extract_text_from_file(uploaded_file):
+def extract_text_with_positions(uploaded_file):
     """
-    Extract text from a PDF file uploaded via Django.
-    Returns either a single string or a dict with pages.
+    Extracts text, page number, line number, and position from a PDF.
+    Returns a list of dicts:
+    [
+        {
+            'page': 1,
+            'line': 1,
+            'text': 'John Doe',
+            'bbox': (x0, y0, x1, y1)
+        },
+        ...
+    ]
     """
-    document_text = ""
-    pages_text = {}
-    
-    # Open PDF in memory
-    pdf = fitz.open(stream=uploaded_file.read(), filetype="pdf")
-    
-    for page_number in range(len(pdf)):
-        page = pdf[page_number]
-        text = page.get_text()
-        pages_text[page_number + 1] = text
-        document_text += text + "\n"
-    
-    return document_text, pages_text
+    results = []
+
+    # Make sure the file pointer is at the start
+    uploaded_file.seek(0)
+    doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
+
+    for page_num, page in enumerate(doc, start=1):
+        blocks = page.get_text("blocks")  # each block = (x0, y0, x1, y1, text, ...)
+        line_counter = 0  # track line numbers per page
+
+        for b in blocks:
+            block_text = b[4].strip()
+            if block_text:
+                lines = block_text.split('\n')  # split block into lines
+                for line in lines:
+                    line = line.strip()
+                    if line:  # skip empty lines
+                        line_counter += 1
+                        results.append({
+                            "page": page_num,
+                            "line": line_counter,
+                            "text": line,
+                            "bbox": (b[0], b[1], b[2], b[3])
+                        })
+
+    return results

@@ -1,40 +1,38 @@
-# import re
-
-# from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
-
-# model_name = "iiiorg/piiranha-v1-detect-personal-information"
-# #other option dbmdz/bert-large-cased-finetuned-conll03-english
-# tokenizer = AutoTokenizer.from_pretrained(model_name)
-# model = AutoModelForTokenClassification.from_pretrained(model_name)
-
-# ner_pipeline = pipeline(
-#     "ner", 
-#     model=model, 
-#     tokenizer=tokenizer, 
-#     aggregation_strategy="simple"
-# )
+from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 
 
-def detect_pii(text):
-    # flags = []
+# Load the PII detection model
+model_name = "SoelMgd/bert-pii-detection"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForTokenClassification.from_pretrained(model_name)
 
-    # if isinstance(text, tuple):
-    #     text_content = text[0]  # take full text
-    # elif isinstance(text, dict):
-    #     text_content = "\n".join(str(t) for t in text.values())
-    # elif isinstance(text, list):
-    #     text_content = "\n".join(str(t) for t in text)
-    # else:
-    #     text_content = str(text)
+#create pipeline
+pii_pipeline = pipeline(
+    "ner", 
+    model=model, 
+    tokenizer=tokenizer, 
+    aggregation_strategy="simple"
+)
 
 
-    # entities = ner_pipeline(text_content, truncation=True)
-    # for e in entities:
-    #     flags.append({
-    #         "type": "NER",
-    #         "entity_group": e["entity_group"],
-    #         "text": e["word"],
-    #         "score": e["score"]
-    #     })
-
-    return "hi"
+def detect_pii(text, page=None, line=None):
+    """
+    Detect PII in the text using pii_pipeline.
+    """
+    pii = []
+    pii_flags = pii_pipeline(text)
+    
+    for flag in pii_flags:
+        if flag['score'] > 0.7:
+            entity_info = {
+                "type": flag['entity_group'].upper(),
+                "score": flag['score'],
+                "text": flag['word'],
+                "start": flag['start'],
+                "end": flag['end'],
+                "page": page,
+                "line": line
+            }
+            pii.append(entity_info)
+    
+    return pii
