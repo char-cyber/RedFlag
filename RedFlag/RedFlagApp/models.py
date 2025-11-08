@@ -1,5 +1,4 @@
 from django.db import models
-from utils import count_pages
 
 class FileModel(models.Model):
     title = models.CharField(max_length=255)
@@ -9,6 +8,3 @@ class FileModel(models.Model):
     #for outputting a string
     def __str__(self):
         return self.title
-    
-    def page_count(self):
-        return count_pages(self.file)
