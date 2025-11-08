@@ -6,6 +6,7 @@ from .utils import *
 
 #classifcation
 from classification.services.pii_detection import detect_pii_pdf
+from classification.services.category_logic import classify_document
 
 
 def home(request):
@@ -47,14 +48,15 @@ def upload_file(request):
 
 
                 pii_flags = detect_pii_pdf(uploaded_file)
-
+                category = classify_document(text_content, pii_flags)
                 
                 
 
                 return render(request, 'success.html', {
                     'num_pages': preprocessed_file["num_pages"], 
                     'num_images': preprocessed_file["num_images"],
-                    'pii_flags': pii_flags
+                    'pii_flags': pii_flags,
+                    'category': category
                     })
 
             #otheriwse throw error invalid pdf on upload page
