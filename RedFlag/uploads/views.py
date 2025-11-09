@@ -4,15 +4,11 @@ from .forms import UploadFileForm
 from .models import FileModel # Assuming you have a model to store file info
 from .utils import *
 
-import json
+from django.http import JsonResponse
 
 #classifcation
 from classification.services.pii_detection import detect_pii_pdf
 from classification.services.classification_logic import classify_document
-
-
-def home(request):
-    return render(request, 'home.html')
 
 def upload_file(request):
     if request.method == 'POST':
@@ -43,26 +39,23 @@ def upload_file(request):
                     text_content = text_content.strip()
 
                 except Exception as e:
-                    return render(request, 'upload.html', {
-                        'form': form, 
-                        'errors': e
-                    })
+                    return JsonResponse({"error": f"PDF text extraction failed: {e}"}, status=500)
 
 
                 pii_flags = detect_pii_pdf(uploaded_file)
-                category_and_flags = classify_document(text_content, pii_flags, preprocessed_file["num_pages"], preprocessed_file["num_images"])
+                context = classify_document(text_content, pii_flags, preprocessed_file["num_pages"], preprocessed_file["num_images"])
 
-                return render(request, 'success.html', { "category_and_flags": category_and_flags })
+                return JsonResponse(context, safe = False)
 
             #otheriwse throw error invalid pdf on upload page
             else: 
-                return render(request, 'upload.html', {
-                    'form': form, 
-                    'errors': preprocessed_file.get("errors", ["Invalid PDF"])
-                })
+                return JsonResponse({
+                    "error": preprocessed_file.get("errors", ["Invalid PDF"])
+                }, status=400)
 
-
-    else:
-        form = UploadFileForm()
+        else:
+            return JsonResponse({"error": form.errors}, status=400)
+    form = UploadFileForm()
     return render(request, 'upload.html', {'form': form})
+
 

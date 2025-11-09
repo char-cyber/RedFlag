@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
     <title>Success</title>
@@ -7,11 +7,60 @@
     <h1>File uploaded successfully!</h1>
     <br>
     <pre>{{ category_and_flags|safe }}</pre>
-    <!-- <p>Category Confidence: {{ confidence }}. </p>
-    <p>Category Reason: {{ reason }}. </p>
-    <p>Flags Found: {{ flags }}. </p>
-    <p>Flag Locations: {{ flag_location }}. </p>
-    <p>Flag Descriptions: {{ flag_des }}. </p> -->
+
     <a href="{% url 'upload' %}">Upload another file</a>
 </body>
-</html>
+</html> -->
+
+<h2>File Uploaded Successfully!</h2>
+
+<p>File Name: {{ file_obj.file.name }}</p>
+<p>Number of Pages: {{ preprocessed_file.num_pages }}</p>
+<p>Number of Images: {{ preprocessed_file.num_images }}</p>
+
+<!-- Button to trigger classification -->
+<button id="classify-btn">Classify Document</button>
+
+<h3>Classification Result:</h3>
+<pre id="classification-result"></pre>
+
+<script>
+// Helper to get CSRF token for POST
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+document.getElementById("classify-btn").addEventListener("click", function() {
+    const formData = new FormData();
+    formData.append("file_id", "{{ file_obj.id }}");  // or pass uploaded file reference
+
+    fetch("{% url 'classify' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrftoken
+        },
+        body: formData
+    })
+    .then(res => res.json())  // parse JSON response
+    .then(data => {
+        // Display the JSON exactly as returned
+        document.getElementById("classification-result").textContent = JSON.stringify(data, null, 2);
+    })
+    .catch(err => {
+        document.getElementById("classification-result").textContent = "Error: " + err;
+    });
+});
+</script>

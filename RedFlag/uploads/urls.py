@@ -1,9 +1,9 @@
 # myapp/urls.py
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    path('home/', views.home, name='home'),
     path('upload/', views.upload_file, name='upload'),
+    path('classification/', include('classification.urls')),
 ]
 

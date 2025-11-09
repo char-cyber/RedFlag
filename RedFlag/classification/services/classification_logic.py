@@ -64,7 +64,7 @@ Respond with a short JSON object:
     "category": "<one of the four>", 
     "metadata": {{"pages": {given_page_num}, "images": {given_image_num}}},
     "flags" : <names of flags found>, 
-    "citations": <list of flags in the format "page 2: SSN field">
+    "citations": <list of flags in the format "page 2, line 3: SSN field">
 }}
 """
 

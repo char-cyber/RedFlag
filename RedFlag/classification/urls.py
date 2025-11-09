@@ -1,6 +1,6 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    path('classify/', views.classify_view, name='classify'),
+    path('api/classify/', views.classify_file_endpoint, name='classify'),
 ]
