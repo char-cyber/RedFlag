@@ -5,10 +5,13 @@
 </head>
 <body>
     <h1>File uploaded successfully!</h1>
-    <p>File has {{ num_pages }} pages. </p>
-    <p>File has {{ num_images }} images. </p>
-    <p>PII Flags: {{ pii_flags }}. </p>
-    <p>Category: {{ category }}</P>
+    <br>
+    <pre>{{ category_and_flags|safe }}</pre>
+    <!-- <p>Category Confidence: {{ confidence }}. </p>
+    <p>Category Reason: {{ reason }}. </p>
+    <p>Flags Found: {{ flags }}. </p>
+    <p>Flag Locations: {{ flag_location }}. </p>
+    <p>Flag Descriptions: {{ flag_des }}. </p> -->
     <a href="{% url 'upload' %}">Upload another file</a>
 </body>
 </html>

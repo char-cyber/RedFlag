@@ -4,9 +4,11 @@ from .forms import UploadFileForm
 from .models import FileModel # Assuming you have a model to store file info
 from .utils import *
 
+import json
+
 #classifcation
-from classification.services.pii_detection import detect_pii_pdf, detect_pii_docx, extract_docx_content
-from classification.services.category_logic import classify_document
+from classification.services.pii_detection import detect_pii_pdf
+from classification.services.classification_logic import classify_document
 
 
 def home(request):
