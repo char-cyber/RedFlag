@@ -90,7 +90,7 @@ html, body {
 
 
 
-.embed_doc, .flags {    
+.embed_doc, .flags, .info_text, .upload {    
     background-color: var(--light_background);
     border-color: white;
     border-radius: 6px;
@@ -103,6 +103,10 @@ html, body {
     margin: 2.5%;
     padding: 0 10px;
 
+}
+
+.flags {
+  margin: 0 auto;       
 }
 /* flag table */
 .flag {
@@ -157,3 +161,108 @@ html, body {
   color: #333;
   text-align: left;
 }
+
+
+
+
+
+  .upload {
+    margin-left: auto;
+    margin-top: 40px;
+    margin-right: 10px;
+    padding: 10px;
+    width: 40%;
+  
+    text-align: center;  
+
+    background-color: var(--light_background);
+  }
+
+  .upload input[type="file"] {
+    display: block;
+    width: 100%;
+    font-size: 16px;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;  
+  }
+
+  .upload input[name="title"] {
+    display: block;
+    width: 100%;
+    font-size: 16px;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;  
+  }
+
+  .upload form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .upload .confirm {
+    background-color: var(--text-secondary);
+    border: 1px solid white;
+    border-radius: 2px;
+    padding: 10px 20px;
+
+    font-size: 25px;
+    color: white;
+  }
+
+  
+  .upload .confirm:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+
+  .upload .confirm:active {
+    transform: scale(0.98);
+  }
+
+  .info_text {
+    padding: 10px;
+    margin-top: 5px;
+    margin-left: 10px;
+    width: 50%;
+    background-color: var(--light_background);
+  }
+
+  .info_text p {
+    font-size: 24px;
+  }
+
+  #loading-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(200, 220, 200, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    flex-direction: column;
+  }
+  .spinner {
+    border: 6px solid white;
+    border-top: 6px solid var(--accent-color);
+    border-radius: 50%;
+    width: 60px; height: 60px;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  #loading-text {
+    margin-top: 15px;
+    font-size: 18px;
+    color: #333;
+  }

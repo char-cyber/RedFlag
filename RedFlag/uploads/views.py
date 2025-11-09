@@ -74,7 +74,7 @@ def upload_file(request):
                     'category': classification["category"],
                     'confidence': classification["confidence"],
                     'num_pages': preprocessed_file["num_pages"],
-                    'num images': preprocessed_file["num_images"],
+                    'num_images': preprocessed_file["num_images"],
                     'num_flags': classification["num_flags"],
                     'flag_info': classification["flag_info"]
                 })

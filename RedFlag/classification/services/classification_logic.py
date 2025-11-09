@@ -19,7 +19,14 @@ Classify this document into one or more of these categories:
 1. Highly Sensitive: Content that includes PII like SSNs, account/credit card numbers, and proprietary schematics (e.g., defense or next‑gen product designs of military equipment).
 2. Confidential: Internal communications and business documents, customer details (names, addresses), and non-public operational content.
 3. Public: Marketing materials, product brochures, public website content, generic images.
-4. Unsafe Content: Content must be evaluated for child safety and should not include hate speech, exploitative, violent, criminal, political news, or cyber-threat content.
+
+
+Also check if it is Unsafe Content: Content must be evaluated for child safety and should not include hate speech, exploitative, violent, criminal, political news, or cyber-threat content.
+(and if it is, combine them as in "Sensitive / Unsafe")
+
+
+
+Generate a percentage for how confident you are
 
 Also, determine if any of the following cases are present:
 1. Proprietary schematics / technical designs: Defense systems, next-gen products, or blueprints.
@@ -32,6 +39,8 @@ Also, determine if any of the following cases are present:
 8. Executive communications: Board meeting notes, CEO directives, or high-level internal memos.
 9. Software source code / IP assets: Proprietary code, scripts, or patent drafts.
 10: Incident or security reports: Breaches, investigations, or sensitive operational incidents.
+if none of these are found, create at least 1 case.
+
 
 If any cases are found, please return their name in "flags" in the json, and a short explanation of why the page was flagged and the page and line number of the flag
 Include all instances of any flag found, and include all flags found
@@ -61,12 +70,13 @@ Document text:
 Respond with a short JSON object:
 {{
 
-    "category": "<one of the four>", 
+    "category": "<found above>", 
     "metadata": {{"pages": {given_page_num}, "images": {given_image_num}}},
     "flags" : <names of flags found>, 
-    "confidence":<100% confident you are on your analysis>
+    "confidence":<what % confident you are on your analysis>
     "flag_info" : <"critical": bool on whether or not it's urgent, "name" : flag name, "page", "line", "description">",
-    "num_flags": number of flags found,
+    "num_flags": <length of flag info>,
+    "num_images": {given_image_num}
     "citations": <list of flags in the format "page 2: SSN field">
 }}"""}]},
         {"role": "user", "parts": [{"text": text}]}
