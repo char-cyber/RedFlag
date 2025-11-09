@@ -1,0 +1,159 @@
+:root {
+  --accent-color: #990D35;
+  --secondary-accent: #D52941;
+  --text-color: #283D3B;
+  --text-secondary: #377771;
+  --background: #F3E9D2;
+  --light_background: #FFF9EB;
+
+}
+
+/* reseting default padding */
+html, body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--background);
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    align-items: center;
+    position: relative;
+
+    gap: 10px;
+
+}
+
+.col {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+
+}
+
+.head_bar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+
+    align-items: center;
+    position: relative;
+
+    height: 80px;
+
+    background-color: var(--accent-color);
+    color: var(--background);
+
+}
+
+.head_bar h1 {
+  margin: 0 auto;
+}
+
+
+
+.logo {
+    font: 'Franklin Gothic Medium';
+    position: absolute;
+    left: 20px;
+    color: var(--background);
+}
+
+.summary {
+    background-color: var(--text-secondary);
+    border-color: var(--text-color);
+    border-radius: 6px;
+    border-width: 1px;
+    box-shadow: 2px 2px 3px gray;
+
+    width: 65%;
+    margin: 20px;
+    padding: 0 10px;
+
+    color: var(--light_background);
+
+    align-items: center;
+    position: relative;
+}
+
+.row p {
+  margin: auto;
+}
+
+.summary .row {
+    padding: 10px;
+}
+
+
+
+.embed_doc, .flags {    
+    background-color: var(--light_background);
+    border-color: white;
+    border-radius: 6px;
+    border-width: 1px;
+    box-shadow: 2px 2px 3px gray;
+
+    width: 40%;
+    height: auto;
+
+    margin: 2.5%;
+    padding: 0 10px;
+
+}
+/* flag table */
+.flag {
+  display: flex; /* main row: star + content */
+  align-items: flex-start; /* align star with top of content */
+  gap: 12px; /* spacing between star and content */
+  padding: 12px 16px; /* added padding inside the flag */
+
+}
+
+.flag .col:first-child {
+  flex: 0 0 auto; /* do not stretch */
+  display: flex;
+  align-items: center; /* vertically center star with first row */
+  font-weight: bold;
+  font-size: 18px;
+  margin: 0; /* remove p default margin */
+}
+
+.flag .col:nth-child(2) {
+  flex: 1; /* take remaining width */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flag .col:nth-child(2) .row:first-child {
+  display: flex;
+  justify-content: space-between; /* flag_name left, location right */
+  align-items: center;
+}
+
+.flag .flag_name,
+.flag .location,
+.flag .desc {
+  margin: 0; /* remove default p margins */
+}
+
+.flag .flag_name {
+  font-weight: bold;
+  text-align: left;
+}
+
+.flag .location {
+  font-size: 0.9em;
+  color: #666;
+  text-align: right;
+}
+
+.flag .desc {
+  font-size: 0.9em;
+  color: #333;
+  text-align: left;
+}
