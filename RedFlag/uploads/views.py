@@ -7,7 +7,7 @@ from .utils import *
 import json
 
 #classifcation
-from classification.services.pii_detection import detect_pii_pdf
+from classification.services.pii_detection import detect_pii_pdf, detect_pii_docx
 from classification.services.classification_logic import classify_document
 
 
@@ -50,18 +50,19 @@ def upload_file(request):
                         })  
 
                     pii_flags = detect_pii_pdf(uploaded_file)
-                    category = classify_document(text_content, pii_flags)
-                else:
+                    category = classify_document(text_content, pii_flags, preprocessed_file["num_pages"], preprocessed_file["num_images"], preprocessed_file["images"])
+                else: #docx processing
                     text, images = extract_docx_content(uploaded_file)
+                    preprocessed_file["num_images"] = len(images)
                     
                     pii_flags = detect_pii_docx(text, images)
-                    category = classify_document(text, pii_flags)
+                    category = classify_document(text, pii_flags, preprocessed_file["num_pages"], preprocessed_file["num_images"], images)
 
                 return render(request, 'success.html', {
                     'num_pages': preprocessed_file["num_pages"], 
                     'num_images': preprocessed_file["num_images"],
                     'pii_flags': pii_flags,
-                    'category': category
+                    'category': category,
                     })
 
             #otheriwse throw error invalid pdf on upload page

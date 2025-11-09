@@ -93,23 +93,3 @@ def detect_pii_docx(text, images):
     return all_pii
 
 
-def extract_docx_content(file_obj):
-    if hasattr(file_obj, "seek"):
-        file_obj.seek(0)
-
-    if hasattr(file_obj, "read"):
-        data = BytesIO(file_obj.read())
-    else:
-        data = open(file_obj, "rb")
-
-    doc = Document(data)
-    text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
-
-    # Extract embedded images
-    images = []
-    for rel in doc.part.rels.values():
-        if "image" in rel.target_ref:
-            image_data = rel.target_part.blob
-            images.append(BytesIO(image_data))
-    
-    return text, images

@@ -35,7 +35,9 @@ def preprocess(file_obj):
                 reader = PdfReader(buffer)
                 result["num_pages"] = len(reader.pages)
                 buffer.seek(0)
-                result["num_images"] = count_images(buffer)
+                images = extract_images(buffer)
+                result["num_images"] = len(images)
+                result["images"] = images
                 result["is_pdf"] = True
             except Exception as e:
                 result["errors"].append(f"Invalid PDF: {str(e)}")
@@ -66,18 +68,101 @@ def preprocess(file_obj):
     return result
 
 
-def count_images(buffer):
-    """Count images inside a PDF (PyMuPDF)."""
-    total_images = 0
+def extract_images(buffer):
+    """Extract images inside a PDF (PyMuPDF)."""
+
+    images = []
     try:
+        # Ensure buffer is at start
+        if hasattr(buffer, "seek"):
+            buffer.seek(0)
+
         pdf_doc = fitz.open(stream=buffer.read(), filetype="pdf")
-        for page in pdf_doc:
-            # Works for all PyMuPDF versions
-            if hasattr(page, "get_images"):
-                images = page.get_images()
-            else:
-                images = page.getImageList()
-            total_images += len(images)
+        for page_index, page in enumerate(pdf_doc, start=1):
+            try:
+                # PyMuPDF v1.23+ uses get_images(), older uses getImageList()
+                image_list = page.get_images(full=True) if hasattr(page, "get_images") else page.getImageList()
+
+                for img_index, img in enumerate(image_list, start=1):
+                    xref = img[0]
+                    base_image = pdf_doc.extract_image(xref)
+                    image_data = base_image["image"]
+                    images.append((BytesIO(image_data), page_index))
+
+            except Exception as page_err:
+                print(f"[WARN] Page {page_index}: Failed to extract some images: {page_err}")
+
     except Exception as e:
-        print(f"[WARN] Failed to count images: {e}")
-    return total_images
+        print(f"[WARN] Failed to extract images: {e}")
+
+    return images
+
+#docx files do not have pages, so we can only approximate them with 
+from io import BytesIO
+from docx import Document
+
+from io import BytesIO
+from docx import Document
+
+def extract_docx_content(file_obj):
+    """
+    Extract text and embedded images from a DOCX file.
+    Approximates 1 page = 800 words.
+    Returns:
+        text (str): Combined document text.
+        images (list[tuple[BytesIO, int]]): List of (image_data, approx_page_index) tuples.
+    """
+    # Ensure we're at the start
+    if hasattr(file_obj, "seek"):
+        file_obj.seek(0)
+
+    # Load file into memory buffer
+    if hasattr(file_obj, "read"):
+        buffer = BytesIO(file_obj.read())
+    else:
+        buffer = open(file_obj, "rb")
+
+    doc = Document(buffer)
+
+    all_text = []
+    images = []
+    word_count = 0
+
+    # namespace key used to read rId attribute
+    REL_NS = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed"
+
+    # iterate paragraphs in order to preserve document flow
+    for para in doc.paragraphs:
+        para_text = para.text or ""
+        # approximate page for images that appear in this paragraph
+        approx_page = max(1, word_count // 400 + 1)
+
+        # search every run inside paragraph for image blip references
+        for run in para.runs:
+            # find any <blip ... r:embed="rIdXYZ" /> nodes under the run XML
+            blips = run.element.findall('.//{*}blip')
+            for blip in blips:
+                rId = blip.get(REL_NS)
+                if not rId:
+                    continue
+                # fetch image blob from document relationships if present
+                if rId in doc.part.rels:
+                    try:
+                        image_blob = doc.part.rels[rId].target_part.blob
+                        images.append((BytesIO(image_blob), approx_page))
+                    except Exception:
+                        # skip if extracting that particular image fails
+                        continue
+
+        # accumulate text and update word count after scanning runs (so images in this para map to current word_count)
+        if para_text.strip():
+            all_text.append(para_text)
+            word_count += len(para_text.split())
+
+    # cleanup if we opened a file object (not necessary for BytesIO)
+    if not hasattr(file_obj, "read"):
+        buffer.close()
+
+    return "\n".join(all_text), images
+
+

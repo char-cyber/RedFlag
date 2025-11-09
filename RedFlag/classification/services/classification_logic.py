@@ -4,13 +4,14 @@ import google.generativeai as genai
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-def classify_document(text, pii_flags, given_page_num, given_image_num):
+def classify_document(text, pii_flags, given_page_num, given_image_num, images):
     """Use Gemini API to classify document sensitivity."""
 
     model = genai.GenerativeModel("gemini-flash-latest")
 
-    prompt = f"""
-You are a compliance and document-classification expert.
+    parts = [
+        {"role": "user", "parts": [{
+            "text": f"""You are a compliance and document-classification expert.
 
 Classify this document into one or more of these categories:
 1. Highly Sensitive: Content that includes PII like SSNs, account/credit card numbers, and proprietary schematics (e.g., defense or next‑gen product designs of military equipment).
@@ -18,7 +19,7 @@ Classify this document into one or more of these categories:
 3. Public: Marketing materials, product brochures, public website content, generic images.
 4. Unsafe Content: Content must be evaluated for child safety and should not include hate speech, exploitative, violent, criminal, political news, or cyber-threat content.
 
-
+Please also describe every image you see along with its page number.
 
 Also, determine if any of the following flags are present:
 1. Proprietary schematics / technical designs: Defense systems, next-gen products, or blueprints.
@@ -34,7 +35,6 @@ Also, determine if any of the following flags are present:
 
 If any are found, please return their name in "flags" in the json, and a short explanation of why the page was flagged and the page and line number of the flag
 Include all instances of any flag found, and include all flags found
-
 
 Here are some test cases for correctness:
 🧪 Test Cases (for Judging & Testing)
@@ -65,8 +65,30 @@ Respond with a short JSON object:
     "metadata": {{"pages": {given_page_num}, "images": {given_image_num}}},
     "flags" : <names of flags found>, 
     "citations": <list of flags in the format "page 2: SSN field">
-}}
-"""
+}}"""}]},
+        {"role": "user", "parts": [{"text": text}]}
+    ]
 
-    response = model.generate_content(prompt)
-    return response.text 
+    # Attach images (Gemini automatically detects image type)
+    for img, page_index in images:
+        if hasattr(img, "seek"):
+            img.seek(0)
+            data = img.read()
+        elif isinstance(img, bytes):
+            data = img
+        else:
+            continue
+
+        parts.append({
+            "role": "user",
+            "parts": [
+                {"text": f"Image extracted from page {page_index}: "},
+                {
+                "inline_data": {
+                    "mime_type": "image/png",
+                    "data": data
+                }
+            }]
+        })
+    response = model.generate_content(parts)
+    return response.text
