@@ -1,5 +1,7 @@
 # utils.py
 import os
+import re
+import json
 import google.generativeai as genai
 
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -19,9 +21,7 @@ Classify this document into one or more of these categories:
 3. Public: Marketing materials, product brochures, public website content, generic images.
 4. Unsafe Content: Content must be evaluated for child safety and should not include hate speech, exploitative, violent, criminal, political news, or cyber-threat content.
 
-Please also describe every image you see along with its page number.
-
-Also, determine if any of the following flags are present:
+Also, determine if any of the following cases are present:
 1. Proprietary schematics / technical designs: Defense systems, next-gen products, or blueprints.
 2. Internal communications: Emails, memos, or chat transcripts not meant for external sharing.
 3. Business strategic documents: Plans, budgets, forecasts, or corporate strategies.
@@ -33,7 +33,7 @@ Also, determine if any of the following flags are present:
 9. Software source code / IP assets: Proprietary code, scripts, or patent drafts.
 10: Incident or security reports: Breaches, investigations, or sensitive operational incidents.
 
-If any are found, please return their name in "flags" in the json, and a short explanation of why the page was flagged and the page and line number of the flag
+If any cases are found, please return their name in "flags" in the json, and a short explanation of why the page was flagged and the page and line number of the flag
 Include all instances of any flag found, and include all flags found
 
 Here are some test cases for correctness:
@@ -64,6 +64,9 @@ Respond with a short JSON object:
     "category": "<one of the four>", 
     "metadata": {{"pages": {given_page_num}, "images": {given_image_num}}},
     "flags" : <names of flags found>, 
+    "confidence":<100% confident you are on your analysis>
+    "flag_info" : <"critical": bool on whether or not it's urgent, "name" : flag name, "page", "line", "description">",
+    "num_flags": number of flags found,
     "citations": <list of flags in the format "page 2: SSN field">
 }}"""}]},
         {"role": "user", "parts": [{"text": text}]}
@@ -91,4 +94,45 @@ Respond with a short JSON object:
             }]
         })
     response = model.generate_content(parts)
-    return response.text
+    raw_text = response.text
+
+    #parsing json
+    try:
+        cleaned_response = clean_gemini_response(raw_text)
+        classification = json.loads(cleaned_response)
+    except Exception as e:
+        # Handle errors so UnboundLocalError won't occur
+        classification = None
+        print("Failed to parse Gemini response:", e)
+
+        # Fallback to empty/default values
+        classification = {
+            "category": "Unknown",
+            "metadata": {"pages": given_page_num, "images": given_image_num},
+            "flags": [],
+            "flag_info": [],
+            "num_flags": 0,
+            "num_images" : given_image_num,
+            "confidence": 0,
+            "citations": []
+        }
+
+    return classification
+
+
+
+def clean_gemini_response(raw_text):
+    """
+    Strips markdown/code fences (``` or ```json) and surrounding whitespace,
+    returns a string ready for json.loads().
+    """
+    if not raw_text:
+        return ""
+    
+    # Remove starting ``` or ```json (optional language tag)
+    cleaned = re.sub(r'^```(?:json)?\s*', '', raw_text, flags=re.IGNORECASE)
+    # Remove ending ```
+    cleaned = re.sub(r'\s*```$', '', cleaned)
+    # Strip remaining whitespace
+    cleaned = cleaned.strip()
+    return cleaned

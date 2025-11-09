@@ -48,20 +48,40 @@ def upload_file(request):
                         })  
 
                     pii_flags = detect_pii_pdf(uploaded_file)
-                    category = classify_document(text_content, pii_flags, preprocessed_file["num_pages"], preprocessed_file["num_images"], preprocessed_file["images"])
+                    classification = classify_document(text_content, pii_flags, preprocessed_file["num_pages"], preprocessed_file["num_images"], preprocessed_file["images"])
+ 
+
                 else: #docx processing
                     text, images = extract_docx_content(uploaded_file)
                     preprocessed_file["num_images"] = len(images)
                     
                     pii_flags = detect_pii_docx(text, images)
-                    category = classify_document(text, pii_flags, preprocessed_file["num_pages"], preprocessed_file["num_images"], images)
+                    classification = classify_document(text, pii_flags, preprocessed_file["num_pages"], preprocessed_file["num_images"], images)
 
-                return render(request, 'success.html', {
-                    'num_pages': preprocessed_file["num_pages"], 
-                    'num_images': preprocessed_file["num_images"],
-                    'pii_flags': pii_flags,
-                    'category': category,
-                    })
+
+                # <!-- variables needed -->
+
+                #  - doc_name
+                #  - category
+                #  - confidence
+                #  - num_pages
+                #  - num images
+                #  - num_flags
+                #  - flag_info: critical, name, page, line, description
+
+                return render(request, 'analysis.html', {
+                    'doc_name' : form.cleaned_data['title'],
+                    'category': classification["category"],
+                    'confidence': classification["confidence"],
+                    'num_pages': preprocessed_file["num_pages"],
+                    'num images': preprocessed_file["num_images"],
+                    'num_flags': classification["num_flags"],
+                    'flag_info': classification["flag_info"]
+                })
+
+                # return render (request, 'success.html', {'classification' : classification})
+            
+
 
             #otheriwse throw error invalid pdf on upload page
             else: 

@@ -1,5 +1,15 @@
 {% load static %}
+<!-- variables needed -->
+ <!-- 
+ - doc_name
+ - category
+ - confidence
+ - num_pages
+ - num images
+ - num_flags
+ - flag_info: critical, name, page, line, description
 
+  -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -10,48 +20,55 @@
   <body>
     <div class = "head_bar">
         <p class = "logo">RedFlag</p>
-        <h1> TD Document Name Analysis</h1>
+        <h1> {{ doc_name|default:"" }} Analysis</h1>
     </div>
 
     <center>
     <div class = "summary">
         <div class = "row">
-            <p>TD Sensitive</p>
-            <p>TD 98% Confident</p>
+            <p>{{ category|default:"Uncategorized" }}</p>
+            <p>{{ confidence|default_if_none:0|floatformat:2|add:"0"|floatformat:0  }}% Confident</p>
         </div>
         <div class = "row">
-            <p>TD 5 Pages</p>
-            <p>TD 10 Images</p>
-            <p>TD 48 Flags</p>
+            <p>{{ num_pages|default:"Unknown" }} Pages</p>
+            <p>{{ num_images|default:"Unknown" }} Images</p>
+            <p>{{ num_flags|default:"Unknown" }} Flags</p>
         </div>
     </div>
     </center>
     <center>
     <div class = "row">
         <div class = "embed_doc">
-            <h3>Document</h3>
+            <h3>{{ doc_name|default:"Document" }}</h3>
+            <!-- TODO import document -->
             <p> docs goes here</p>
         </div>
-        <div class = "flags">
+        <div class="flags">
             <h3>Flags</h3>
-            
-            <!-- for each flag -->
-            <div class = "flag">
-                <div class = "col">
-                    <!-- star if important -->
-                     <p>★</p>
-                </div>
-                <div class = "col">
-                    <div class = "row">
-                        <p class = "flag_name">TD PII</p>
-                        <p class = "location">TD Page 1, Line 2</p>
-                    </div>
-                    <div class = "row">
-                        <p class = "desc">TD email, last name</p>
-                    </div>
-                </div>
 
-            </div>
+            {% for flag in flag_info %}
+                <div class="flag">
+                    <div class="col">
+                        <!-- star if important -->
+                        {% if flag.critical %}
+                            <p>★</p>
+                        {% else %}
+                            <p>&nbsp;</p> <!-- empty space if not critical -->
+                        {% endif %}
+                    </div>
+                    <div class="col">
+                        <div class="row">
+                            <p class="flag_name">{{ flag.name }}</p>
+                            <p class="location">Page {{ flag.page }}, Line {{ flag.line }}</p>
+                        </div>
+                        <div class="row">
+                            <p class="desc">{{ flag.description }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No flags found.</p>
+            {% endfor %}
 
         </div>
 
