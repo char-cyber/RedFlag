@@ -1,10 +1,15 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>Upload File</title>
+    <link rel="stylesheet" href="{% static 'uploads/style.css' %}">
 </head>
 <body>
-    <h1>Upload a File</h1>
+    <div class="head_bar">
+        <h1>RedFlag Document Classifier</h1>
+    </div>
     {% if errors %}
         <div style="color: red;">
             <ul>
@@ -15,10 +20,56 @@
         </div>
     {% endif %}
 
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Upload</button>
-    </form>
+    <div class="row">
+        <div class="info_text">
+            <p>RedFlag automatically analyzes and classifies documents based on their sensitivity — Public, Confidential, Highly Sensitive, or Unsafe. 
+                It reads both text and images across multi-page files, detects sensitive information (like PII or proprietary content), and provides evidence-backed classifications. 
+                With real-time feedback and human-in-the-loop review, RedFlag helps organizations easily protect their data and maintain compliance.
+                
+                <br/><br/><strong>Sensitive</strong>: Content that includes PII like SSNs, account/credit card numbers, and proprietary schematics (e.g., defense or next‑gen product designs of military equipment).
+                <br/><br/><strong>Confidential</strong>: Internal communications and business documents, customer details (names, addresses), and non-public operational content.
+                <br/><br/><strong>Public</strong>: Marketing materials, product brochures, public website content, generic images.
+                <br/><br/><strong>Unsafe</strong>: Hate speech, exploitative, violent, criminal, political news, or cyber-threat content.</p>
+        </div>
+        
+        <div class="upload">
+            <form method="POST" enctype="multipart/form-data" id="upload-form">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="confirm" id="upload-btn" disabled>Upload</button>
+            </form>
+        </div>  
+    </div>
+
+     <!-- Loading overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loading-text">Analyzing your document... Please wait.</p>
+    </div>
+
+    <script>
+        // Disable/enable button dynamically
+        document.addEventListener("DOMContentLoaded", () => {
+            const titleInput =  document.querySelector('input[name="title"]');
+            const fileInput = document.querySelector('input[type="file"]');
+            const uploadBtn = document.getElementById("upload-btn");
+            const form = document.getElementById("upload-form");
+            const loadingOverlay = document.getElementById("loading-overlay");
+
+            function updateButtonState() {
+                const hasTitle = titleInput.value.trim().length > 0;
+                const hasFile = fileInput.files.length > 0;
+                uploadBtn.disabled = !(hasTitle && hasFile);
+            }
+
+            titleInput.addEventListener("input", updateButtonState);
+            fileInput.addEventListener("change", updateButtonState);
+
+             // Show loading overlay on submit
+            form.addEventListener("submit", () => {
+                loadingOverlay.style.display = "flex";
+            });
+        });
+    </script>
 </body>
 </html>
