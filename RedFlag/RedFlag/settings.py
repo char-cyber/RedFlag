@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'uploads',
     'classification',
+    'rest_framework',
+    'RedFlagApp',
 ]
 
 MIDDLEWARE = [
