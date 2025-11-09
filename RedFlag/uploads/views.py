@@ -11,8 +11,6 @@ from classification.services.pii_detection import detect_pii_pdf, detect_pii_doc
 from classification.services.classification_logic import classify_document
 
 
-def home(request):
-    return render(request, 'home.html')
 
 def upload_file(request):
     if request.method == 'POST':
@@ -76,4 +74,8 @@ def upload_file(request):
     else:
         form = UploadFileForm()
     return render(request, 'upload.html', {'form': form})
+
+
+def analysis(request):
+    return render(request, 'analysis.html')
 
