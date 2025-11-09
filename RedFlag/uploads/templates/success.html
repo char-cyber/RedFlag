@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Success</title>
+</head>
+<body>
+    <h1>File uploaded successfully!</h1>
+    <br>
+    <pre>{{ category_and_flags|safe }}</pre>
+    <p>Num pages: {{ num_pages }} </p>
+    <p>Num images: {{ num_images }} </p>
+    <p> Category: {{ category }} </p>
+    <!-- <p>Category Confidence: {{ confidence }}. </p>
+    <p>Category Reason: {{ reason }}. </p>
+    <p>Flags Found: {{ flags }}. </p>
+    <p>Flag Locations: {{ flag_location }}. </p>
+    <p>Flag Descriptions: {{ flag_des }}. </p> -->
+    <a href="{% url 'upload' %}">Upload another file</a>
+
+    <!-- {% if image_previews %}
+        {% for img_data in image_previews %}
+            <div style="margin:10px 0;">
+                <img src="data:image/png;base64,{{ img_data }}" alt="Extracted Image" width="300" style="border:1px solid #ccc;">
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No images extracted.</p>
+    {% endif %} -->
+</body>
+</html>
