@@ -19,3 +19,6 @@ pymupdf (fitz)	Extract text, page info, bounding boxes
 python-docx	Extract text from Word documents
 pytesseract	OCR for scanned images / PDFs
 regex	Advanced regex for PII patterns
+
+
+google-generativeai
