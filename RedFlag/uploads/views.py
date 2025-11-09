@@ -4,9 +4,11 @@ from .forms import UploadFileForm
 from .models import FileModel # Assuming you have a model to store file info
 from .utils import *
 
+import json
+
 #classifcation
 from classification.services.pii_detection import detect_pii_pdf
-from classification.services.category_logic import classify_document
+from classification.services.classification_logic import classify_document
 
 
 def home(request):
@@ -48,16 +50,9 @@ def upload_file(request):
 
 
                 pii_flags = detect_pii_pdf(uploaded_file)
-                category = classify_document(text_content, pii_flags)
-                
-                
+                category_and_flags = classify_document(text_content, pii_flags, preprocessed_file["num_pages"], preprocessed_file["num_images"])
 
-                return render(request, 'success.html', {
-                    'num_pages': preprocessed_file["num_pages"], 
-                    'num_images': preprocessed_file["num_images"],
-                    'pii_flags': pii_flags,
-                    'category': category
-                    })
+                return render(request, 'success.html', { "category_and_flags": category_and_flags })
 
             #otheriwse throw error invalid pdf on upload page
             else: 
