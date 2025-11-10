@@ -24,6 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('uploads/', include('uploads.urls')),
     path('classification/', include('classification.urls')),
+    path('RedFlag/', include('redFlagApp.urls')),
 ]
 
 

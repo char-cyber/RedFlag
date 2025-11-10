@@ -1,8 +1,7 @@
 # myapp/views.py
 from django.shortcuts import render
-from .forms import UploadFileForm
-from .models import FileModel # Assuming you have a model to store file info
 from .utils import *
+from uploads.forms import UploadFileForm
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,80 +9,68 @@ from rest_framework import status
 from .serializers import ContextQuerySerializer
 from .serializers import HITLFeedbackSerializer
 from .ai_helpers import call_cohere_api, call_gemini_api
+from uploads.utils import preprocess, extract_docx_content, extract_images
 import json
+from PyPDF2 import PdfReader
 from .prompts import prompt_library
-def mock_external_api(query):
-    #simulate different apis or queries 
-    if 'notion' in query.lower():
-        return {
-            'notion_summary' : 'summary from notion api '
-        }
-    return {'external info': 'no matching external data found'}
+from uploads.models import FileModel
+from classification.services.classification_logic import classify_document 
+from classification.services.pii_detection import detect_pii_pdf, detect_pii_docx
+from uploads.utils import extract_docx_content
 
-
-
-def mock_classify_document(document_id):
-    #this is temporary, in a real system you'd look up uploaded file and run classifier
-    #simulate a few cases
-    mock_results = {
-        1:{
-            "category": "Public",
-            "citations": ["page 1: SSN field", "image 3: face detected"],
-            "flags": [],
-            "metadata" :{"pages": 3, "images": 1}
-        },
-        2:{
-            "category": "Highly Sensitive",
-            "citations": ["page 2: SSN field"],
-            "flags": ["PII detected", "Needs Redaction"],
-            "metadata" :{"pages": 2, "images": 0}
-        },
-        3:{
-            "category": "Confidential",
-            "citations": ["page 1: Project details"],
-            "flags": ["Internal Only"],
-            "metadata" :{"pages": 1, "images": 0}
-        },
-
-    }
-    return mock_results.get(document_id, {
-            "category": "Unknown",
-            "citations": [],
-            "flags": ["Document not found"],
-            "metadata" :{}
-        })
-
-def home(request):
-    return render(request, 'home.html')
-
-def upload_file(request):
-    if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            uploaded_file = request.FILES['file']
-            #preprocessing checks
-            preprocessed_file = preprocess(uploaded_file)
+def get_document_analysis(document_id):
+    """
+    Enhanced helper function that uses your existing processing logic
+    """
+    try:
+        file_obj = FileModel.objects.get(id=document_id)
+        uploaded_file = file_obj.file
+        
+        # Use your existing preprocessing logic
+        preprocessed_file = preprocess(uploaded_file)
+        
+        # Extract text based on file type
+        text_content = ""
+        if preprocessed_file["is_pdf"]:
+            uploaded_file.open('rb')
+            pdf_reader = PdfReader(uploaded_file)
+            for page in pdf_reader.pages:
+                text_content += page.extract_text() or ""
+            text_content = text_content.strip()
+            uploaded_file.close()
             
-            #if it's valid, save it
-            if preprocessed_file["is_pdf"]:
-                FileModel.objects.create(
-                    title=form.cleaned_data['title'], 
-                    file=uploaded_file
-                )
-                return render(request, 'success.html', {'num_pages': preprocessed_file["num_pages"]})
-
-            #otheriwse throw error invalid pdf on upload page
-            else: 
-                return render(request, 'upload.html', {
-                    'form': form, 
-                    'errors': preprocessed_file.get("errors", ["Invalid PDF"])
-                })
-
-
-    else:
-        form = UploadFileForm()
-    return render(request, 'upload.html', {'form': form})
-
+            pii_flags = detect_pii_pdf(uploaded_file)
+        else:  # docx
+            text_content, images = extract_docx_content(uploaded_file)
+            preprocessed_file["num_images"] = len(images)
+            pii_flags = detect_pii_docx(text_content, images)
+        
+        # Classify using your existing logic
+        category = classify_document(
+            text_content, 
+            pii_flags, 
+            preprocessed_file["num_pages"], 
+            preprocessed_file.get("num_images", 0), 
+            preprocessed_file.get("images", [])
+        )
+        
+        return {
+            'category': category,
+            'flags': pii_flags,
+            'metadata': {
+                'num_pages': preprocessed_file["num_pages"],
+                'num_images': preprocessed_file.get("num_images", 0),
+                'file_size': uploaded_file.size,
+                'title': file_obj.title,
+            },
+            'citations': [],  # Add if you have citation extraction
+            'text_content': text_content  # Include for reference
+        }
+    except FileModel.DoesNotExist:
+        return None
+    except Exception as e:
+        print(f"Error analyzing document {document_id}: {str(e)}")
+        return None
 
 
 class ContextQueryView(APIView):
@@ -99,8 +86,8 @@ class ContextQueryView(APIView):
                     status =  status.HTTP_400_BAD_REQUEST
                 )
             # call document classifer 
-            doc_analysis = mock_classify_document(document_id) if document_id else None
-            category = doc_analysis.get('category', [])
+            doc_analysis = get_document_analysis(document_id)
+            category = doc_analysis.get('categories', [])
             prompt_sequence = []
             for cat in category:
                 prompt_sequence.extend(prompt_library.get(cat, []))
@@ -109,7 +96,7 @@ class ContextQueryView(APIView):
             prompt_sequence = list(dict.fromkeys(prompt_sequence)) #deduplicate
             
             # and context assembler
-            external_context = mock_external_api(query)
+            
             #if category is empty
             if category==[]:
                 return Response(
@@ -121,13 +108,11 @@ class ContextQueryView(APIView):
             package = {
                 'query': query,
                 'document':{
-                    'id': document_id,
                     'category': category,
                     "metadata": doc_analysis.get('metadata', {}),
                     "citations": doc_analysis.get('citations', []),
                     "flags": flags,
                 },
-                'external_context': external_context,
                 'edge_case': edge_case,
                 'status': "Flagged: Sensitive content" if flags else "OK",
                 'prompt_sequence': prompt_sequence,
@@ -178,7 +163,7 @@ class HITLFeedbackView(APIView):
             query = updates['query']
             document_id = updates['document_id']
             #original package
-            original_data = mock_classify_document(document_id)
+            original_data = classify_document(document_id)
             #build original package
             original_package = {
                 'document':{
@@ -189,7 +174,6 @@ class HITLFeedbackView(APIView):
                     "citations": original_data.get('citations', []),
                     "flags": original_data.get('flags', []),
                 },
-                'external_context': {},
                 #what goes in here?
                 'edge_case': bool(original_data.get('flags', [])),
                 'status': "Flagged: Sensitive content" if original_data.get('flags') else "OK",
